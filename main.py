@@ -6,24 +6,29 @@ import os
 TOKEN = os.getenv("TELEGRAM_TOKEN")
 bot = telebot.TeleBot(TOKEN)
 
+# کلید API نوسان
+API_KEY = 'کلید-API-شما'
+
 def fetch_prices():
     try:
-        # درخواست به وب‌سرویس BRS API برای دریافت قیمت‌ها
-        response = requests.get("https://brsapi.ir/Api/Market/Gold.php")
+        # درخواست به وب‌سرویس نوسان برای دریافت قیمت‌ها
+        response = requests.get(f"http://api.navasan.tech/latest/?api_key={API_KEY}")
         data = response.json()
 
-        # استخراج قیمت طلای ۱۸ عیار و اونس جهانی
-        gold_18_price = data['gram18']
-        ounce_price = data['ounce']
-
-        # محاسبه نسبت قیمت طلای ۱۸ عیار به اونس جهانی
-        ratio = gold_18_price / ounce_price
+        # استخراج قیمت‌ها از داده‌های دریافت‌شده
+        gold_18_price = data['18ayar']['value']
+        ounce_price = data['ounce']['value']
+        usd_price = data['usd_sell']['value']
+        euro_price = data['eur_sell']['value']
+        sekkeh_price = data['sekkeh']['value']
 
         # ساخت پیام خروجی
         result = (
             f"قیمت طلای ۱۸ عیار: {gold_18_price} تومان\n"
             f"قیمت اونس جهانی: {ounce_price} دلار\n"
-            f"نسبت قیمت طلای ۱۸ عیار به اونس جهانی: {ratio:.4f}"
+            f"قیمت دلار: {usd_price} تومان\n"
+            f"قیمت یورو: {euro_price} تومان\n"
+            f"قیمت سکه امامی: {sekkeh_price} تومان"
         )
         return result
 
@@ -35,4 +40,4 @@ def send_price(message):
     result = fetch_prices()
     bot.send_message(message.chat.id, result)
 
-bot.polling(none_stop=True, interval=0)
+bot.polling()
