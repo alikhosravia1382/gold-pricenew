@@ -1,30 +1,31 @@
 import requests
-from bs4 import BeautifulSoup
 import telebot
 import os
 
+# دریافت توکن ربات از متغیر محیطی
 TOKEN = os.getenv("TELEGRAM_TOKEN")
 bot = telebot.TeleBot(TOKEN)
 
 def fetch_prices():
-    url = "https://www.livedata.ir/"
-    response = requests.get(url)
-    soup = BeautifulSoup(response.text, "html.parser")
-
     try:
-        # استخراج قیمت طلای ۱۸ عیار
-        gold_18 = soup.find("span", id="l-sekee")
-        gold_18_price = gold_18.text.replace(",", "").strip()
-        gold_18_price = float(gold_18_price)
+        # درخواست به وب‌سرویس BRS API برای دریافت قیمت‌ها
+        response = requests.get("https://brsapi.ir/Api/Market/Gold.php")
+        data = response.json()
 
-        # استخراج قیمت انس طلا
-        ounce = soup.find("span", id="l-ons")
-        ounce_price = ounce.text.replace(",", "").strip()
-        ounce_price = float(ounce_price)
+        # استخراج قیمت طلای ۱۸ عیار و اونس جهانی
+        gold_18_price = data['gram18']
+        ounce_price = data['ounce']
 
+        # محاسبه نسبت قیمت طلای ۱۸ عیار به اونس جهانی
         ratio = gold_18_price / ounce_price
 
-        return f"قیمت طلای ۱۸ عیار: {gold_18_price} تومان\nقیمت انس جهانی: {ounce_price} دلار\nنسبت: {ratio:.4f}"
+        # ساخت پیام خروجی
+        result = (
+            f"قیمت طلای ۱۸ عیار: {gold_18_price} تومان\n"
+            f"قیمت اونس جهانی: {ounce_price} دلار\n"
+            f"نسبت قیمت طلای ۱۸ عیار به اونس جهانی: {ratio:.4f}"
+        )
+        return result
 
     except Exception as e:
         return f"خطا در دریافت اطلاعات: {e}"
@@ -34,4 +35,4 @@ def send_price(message):
     result = fetch_prices()
     bot.send_message(message.chat.id, result)
 
-bot.polling(none_stop=True, interval=0)
+bot.polling()
