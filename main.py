@@ -40,4 +40,4 @@ def send_price(message):
     result = fetch_prices()
     bot.send_message(message.chat.id, result)
 
-bot.polling()
+bot.polling(none_stop=True, interval=0)
