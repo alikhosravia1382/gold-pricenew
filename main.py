@@ -1,43 +1,55 @@
 import requests
-import telebot
-import os
+from telegram import Update
+from telegram.ext import Updater, CommandHandler, CallbackContext
+import schedule
+import time
+import threading
 
-# دریافت توکن ربات از متغیر محیطی
-TOKEN = os.getenv("TELEGRAM_TOKEN")
-bot = telebot.TeleBot(TOKEN)
+# تنظیمات اولیه
+TOKEN = "توکن_ربات_شما"7916139042:AAE38udKVTMmHOTIj0TZc_4kxLZjINxN2oY
+GOLD_PRICE_API = "https://api.metals.live/v1/spot/gold"  # یا هر API دیگر
 
-# کلید API نوسان
-API_KEY = 'کلید-API-شما'
-
-def fetch_prices():
+def get_gold_price():
     try:
-        # درخواست به وب‌سرویس نوسان برای دریافت قیمت‌ها
-        response = requests.get(f"http://api.navasan.tech/latest/?api_key={API_KEY}")
+        response = requests.get(GOLD_PRICE_API)
         data = response.json()
+        global_price = data["price"]  # قیمت جهانی طلا (مثلاً به ازای هر اونس)
+        iran_18k_price = global_price * 0.75  # تقریباً ۱۸ عیار = ۷۵٪ قیمت جهانی
+        return global_price, iran_18k_price
+    except:
+        return None, None
 
-        # استخراج قیمت‌ها از داده‌های دریافت‌شده
-        gold_18_price = data['18ayar']['value']
-        ounce_price = data['ounce']['value']
-        usd_price = data['usd_sell']['value']
-        euro_price = data['eur_sell']['value']
-        sekkeh_price = data['sekkeh']['value']
-
-        # ساخت پیام خروجی
-        result = (
-            f"قیمت طلای ۱۸ عیار: {gold_18_price} تومان\n"
-            f"قیمت اونس جهانی: {ounce_price} دلار\n"
-            f"قیمت دلار: {usd_price} تومان\n"
-            f"قیمت یورو: {euro_price} تومان\n"
-            f"قیمت سکه امامی: {sekkeh_price} تومان"
+def send_gold_price(context: CallbackContext):
+    global_price, iran_18k_price = get_gold_price()
+    if global_price and iran_18k_price:
+        ratio = iran_18k_price / global_price
+        message = (
+            f"💰 قیمت طلای جهانی: {global_price:.2f} دلار/اونس\n"
+            f"🏷️ قیمت طلای ۱۸ عیار (تقریبی): {iran_18k_price:.2f}\n"
+            f"🔢 نسبت قیمت ۱۸ عیار به جهانی: {ratio:.4f}"
         )
-        return result
+        context.bot.send_message(chat_id=context.job.context, text=message)
+    else:
+        context.bot.send_message(chat_id=context.job.context, text="خطا در دریافت قیمت طلا!")
 
-    except Exception as e:
-        return f"خطا در دریافت اطلاعات: {e}"
+def start(update: Update, context: CallbackContext):
+    chat_id = update.message.chat_id
+    context.job_queue.run_repeating(
+        send_gold_price,
+        interval=3600,  # هر ۱ ساعت ارسال شود (میتوانید تغییر دهید)
+        first=0,
+        context=chat_id,
+    )
+    update.message.reply_text("ربات فعال شد! قیمت طلا هر ۱ ساعت ارسال میشود.")
 
-@bot.message_handler(commands=['start', 'price'])
-def send_price(message):
-    result = fetch_prices()
-    bot.send_message(message.chat.id, result)
+def main():
+    updater = Updater(TOKEN, use_context=True)
+    dp = updater.dispatcher
+    dp.add_handler(CommandHandler("start", start))
+    updater.start_polling()
+    updater.idle()
+
+if __name__ == "__main__":
+    main()
 
 bot.polling(none_stop=True, interval=0)
