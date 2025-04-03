@@ -36,19 +36,22 @@ def start(update: Update, context: CallbackContext):
     chat_id = update.message.chat_id
     context.job_queue.run_repeating(
         send_gold_price,
-        interval=3600,  # هر ۱ ساعت ارسال شود (میتوانید تغییر دهید)
+        interval=1800,  # هر ۱ ساعت ارسال شود (میتوانید تغییر دهید)
         first=0,
         context=chat_id,
     )
     update.message.reply_text("ربات فعال شد! قیمت طلا هر ۱ ساعت ارسال میشود.")
 
 def main():
-    updater = Updater(TOKEN, use_context=True)
+    updater = Updater(TOKEN)  # حذف use_context=True
     dp = updater.dispatcher
+    
     dp.add_handler(CommandHandler("start", start))
+    dp.add_handler(CommandHandler("price", send_price))
+    
     updater.start_polling()
+    print("ربات در حال اجراست...")
     updater.idle()
-
 if __name__ == "__main__":
     main()
 
