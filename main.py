@@ -6,7 +6,7 @@ import time
 import threading
 
 # تنظیمات اولیه
-TOKEN = "توکن_ربات_شما"7916139042:AAE38udKVTMmHOTIj0TZc_4kxLZjINxN2oY
+TOKEN = "7916139042:AAE38udKVTMmHOTIj0TZc_4kxLZjINxN2oY"
 GOLD_PRICE_API = "https://api.metals.live/v1/spot/gold"  # یا هر API دیگر
 
 def get_gold_price():
